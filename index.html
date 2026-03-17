@@ -337,6 +337,34 @@ select option{background:#fff;}
 }
 .bene-sum-val{font-family:'DM Mono',monospace;font-weight:500;color:var(--text-primary);}
 
+/* ── 法定繼承 Modal ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.35);z-index:1000;
+  align-items:center;justify-content:center;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:#fff;border-radius:16px;padding:24px;
+  width:90%;max-width:420px;box-shadow:0 16px 48px rgba(0,0,0,0.18);
+}
+.modal-title{
+  font-size:15px;font-weight:700;color:var(--accent);
+  margin-bottom:16px;padding-bottom:12px;
+  border-bottom:1px solid var(--border);
+}
+.modal-field{margin-bottom:14px;}
+.modal-field label{font-size:12px;color:var(--text-secondary);display:block;margin-bottom:5px;}
+.modal-preview{
+  background:var(--bg-elevated);border-radius:9px;
+  padding:12px 14px;margin:14px 0;font-size:12px;
+  color:var(--text-secondary);line-height:1.8;
+}
+.modal-preview .prev-row{display:flex;justify-content:space-between;}
+.modal-preview .prev-name{color:var(--text-primary);}
+.modal-preview .prev-ratio{font-family:'DM Mono',monospace;color:var(--accent);font-weight:600;}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+
 /* ── ADD / REMOVE BUTTONS ── */
 .add-btn{
   width:100%;display:flex;align-items:center;justify-content:center;gap:6px;
@@ -1108,11 +1136,14 @@ function renderPolicies() {
       <div class="bene-section">
         <div class="bene-header">
           <span class="bene-header-label">受益人明細</span>
-          <div class="bene-mode-toggle">
-            <button class="bene-mode-btn ${p.beneMode==='priority'?'active':''}"
-              onclick="setBeneMode(${p.id},'priority')">順位制</button>
-            <button class="bene-mode-btn ${p.beneMode==='ratio'?'active':''}"
-              onclick="setBeneMode(${p.id},'ratio')">比例制</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="collapse-btn" style="border:1px solid var(--border);border-radius:7px;padding:4px 10px;font-size:11px;" onclick="openLegalHeirModal(${p.id})">⚖ 法定繼承帶入</button>
+            <div class="bene-mode-toggle">
+              <button class="bene-mode-btn ${p.beneMode==='priority'?'active':''}"
+                onclick="setBeneMode(${p.id},'priority')">順位制</button>
+              <button class="bene-mode-btn ${p.beneMode==='ratio'?'active':''}"
+                onclick="setBeneMode(${p.id},'ratio')">比例制</button>
+            </div>
           </div>
         </div>
         <div class="bene-list">
@@ -1129,6 +1160,95 @@ function renderPolicies() {
       </div>
     </div>`;
   }).join('');
+}
+
+// ── 法定繼承帶入 Modal ──────────────────────────────────────
+function openLegalHeirModal(pid) {
+  document.getElementById('legalHeirPid').value = pid;
+  document.getElementById('lhSpouse').value = '1';
+  document.getElementById('lhOrder').value = 'child';
+  document.getElementById('lhCount').value = '1';
+  updateLegalHeirPreview();
+  document.getElementById('legalHeirModal').classList.add('open');
+}
+
+function closeLegalHeirModal() {
+  document.getElementById('legalHeirModal').classList.remove('open');
+}
+
+// 點 overlay 關閉
+document.getElementById('legalHeirModal').addEventListener('click', function(e) {
+  if (e.target === this) closeLegalHeirModal();
+});
+
+function calcLegalRatios() {
+  const hasSpouse = document.getElementById('lhSpouse').value === '1';
+  const order     = document.getElementById('lhOrder').value;
+  const count     = Math.max(1, parseInt(document.getElementById('lhCount').value) || 1);
+  const countField = document.getElementById('lhCountField');
+  const countLabel = document.getElementById('lhCountLabel');
+
+  let heirs = [];
+
+  if (order === 'none') {
+    countField.style.display = 'none';
+    if (hasSpouse) heirs = [{ name: '配偶', ratio: 100 }];
+    return heirs;
+  }
+
+  countField.style.display = 'block';
+  const orderLabels = { child:'子女', parent:'父母', sibling:'兄弟姊妹', grandparent:'祖父母' };
+  countLabel.textContent = `${orderLabels[order]}人數`;
+
+  // 民法繼承比例
+  let spouseRatio = 0;
+  if (hasSpouse) {
+    if (order === 'child')       spouseRatio = 100 / (count + 1);
+    else if (order === 'parent') spouseRatio = 50;
+    else if (order === 'sibling') spouseRatio = 50;
+    else if (order === 'grandparent') spouseRatio = 200/3;
+  }
+
+  const restRatio = 100 - spouseRatio;
+  const eachRatio = restRatio / count;
+
+  if (hasSpouse) heirs.push({ name: '配偶', ratio: parseFloat(spouseRatio.toFixed(4)) });
+
+  for (let i = 1; i <= count; i++) {
+    const label = order === 'child' ? (count===1?'子女':`子女${i}`)
+                : order === 'parent' ? (count===1?'父母':(i===1?'父':'母'))
+                : order === 'sibling' ? `兄弟姊妹${i}`
+                : `祖父母${i}`;
+    heirs.push({ name: label, ratio: parseFloat(eachRatio.toFixed(4)) });
+  }
+  return heirs;
+}
+
+function updateLegalHeirPreview() {
+  const heirs = calcLegalRatios();
+  const preview = document.getElementById('lhPreview');
+  if (!heirs.length) { preview.innerHTML = '無繼承人'; return; }
+  preview.innerHTML = heirs.map(h =>
+    `<div class="prev-row"><span class="prev-name">${h.name}</span><span class="prev-ratio">${h.ratio.toFixed(1)}%</span></div>`
+  ).join('');
+}
+
+function applyLegalHeirs() {
+  const pid   = parseInt(document.getElementById('legalHeirPid').value);
+  const p     = policies.find(p => p.id === pid);
+  if (!p) return;
+  const heirs = calcLegalRatios();
+  p.beneficiaries = heirs.map(h => ({
+    bid: Date.now() + Math.random(),
+    name: h.name,
+    priority: 1,
+    ratio: parseFloat(h.ratio.toFixed(2)),
+    isOwner: false
+  }));
+  p.beneMode = 'ratio';
+  closeLegalHeirModal();
+  renderPolicies();
+  calcAll();
 }
 
 // ── 核心計算 ──────────────────────────────────────────────
@@ -1486,5 +1606,39 @@ calcAll();
   });
 })();
 </script>
+<!-- 法定繼承帶入 Modal -->
+<div class="modal-overlay" id="legalHeirModal">
+  <div class="modal-box">
+    <div class="modal-title">⚖ 依法定繼承順位帶入受益人</div>
+    <input type="hidden" id="legalHeirPid" value="">
+    <div class="modal-field">
+      <label>是否有配偶</label>
+      <select id="lhSpouse" onchange="updateLegalHeirPreview()">
+        <option value="1">有配偶</option>
+        <option value="0">無配偶</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>繼承順位（子女 > 父母 > 兄弟姊妹 > 祖父母）</label>
+      <select id="lhOrder" onchange="updateLegalHeirPreview()">
+        <option value="child">第一順位：子女</option>
+        <option value="parent">第二順位：父母</option>
+        <option value="sibling">第三順位：兄弟姊妹</option>
+        <option value="grandparent">第四順位：祖父母</option>
+        <option value="none">無其他繼承人（配偶獨得）</option>
+      </select>
+    </div>
+    <div class="modal-field" id="lhCountField">
+      <label id="lhCountLabel">人數</label>
+      <input type="number" id="lhCount" min="1" max="20" value="1" oninput="updateLegalHeirPreview()">
+    </div>
+    <div class="modal-preview" id="lhPreview"></div>
+    <div class="modal-btns">
+      <button class="btn-p" onclick="applyLegalHeirs()" style="font-size:13px;padding:10px;">帶入受益人</button>
+      <button class="btn-s" onclick="closeLegalHeirModal()" style="font-size:13px;padding:10px;">取消</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
