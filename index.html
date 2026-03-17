@@ -1176,9 +1176,11 @@ function closeLegalHeirModal() {
   document.getElementById('legalHeirModal').classList.remove('open');
 }
 
-// 點 overlay 關閉
-document.getElementById('legalHeirModal').addEventListener('click', function(e) {
-  if (e.target === this) closeLegalHeirModal();
+// 點 overlay 關閉（等 DOM 載入後綁定）
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('legalHeirModal').addEventListener('click', function(e) {
+    if (e.target === this) closeLegalHeirModal();
+  });
 });
 
 function calcLegalRatios() {
