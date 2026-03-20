@@ -41,7 +41,7 @@ body{
   color:var(--text-primary);
   font-family:'Noto Serif TC',serif;
   min-height:100vh;
-  zoom:1.2;
+  zoom:1.4;
 }
 
 /* ── HEADER ── */
@@ -617,7 +617,7 @@ select option{background:#fff;}
         <input type="number" id="childCount" min="0" value="0" oninput="calcAll()">
       </div>
       <div class="field">
-        <label class="field-label">父母（人數，最多2人）
+        <label class="field-label">父母
           <span class="tip" data-tip="被繼承人父母仍在世者，每人扣除額 138 萬元，最多計 2 人。">ⓘ</span>
         </label>
         <input type="number" id="parentCount" min="0" max="2" value="0" oninput="calcAll()">
@@ -1582,15 +1582,16 @@ calcAll();
   }
 
   function positionTip(e) {
+    const ZOOM = parseFloat(getComputedStyle(document.body).zoom) || 1;
     const GAP = 14;
     const bw = box.offsetWidth  || 240;
     const bh = box.offsetHeight || 80;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    let x = e.clientX + GAP;
-    let y = e.clientY - bh - GAP;
-    if (x + bw > vw - 8) x = e.clientX - bw - GAP;
-    if (y < 8) y = e.clientY + GAP;
+    let x = (e.clientX + GAP) / ZOOM;
+    let y = (e.clientY - bh - GAP) / ZOOM;
+    if (x + bw > (vw - 8) / ZOOM) x = (e.clientX - bw - GAP) / ZOOM;
+    if (y < 8) y = (e.clientY + GAP) / ZOOM;
     box.style.left = x + 'px';
     box.style.top  = y + 'px';
   }
