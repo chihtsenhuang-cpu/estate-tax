@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=700, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>台灣遺產稅試算工具</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;600;700&family=DM+Mono:wght@300;400;500&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -41,12 +41,7 @@ body{
   color:var(--text-primary);
   font-family:'Noto Serif TC',serif;
   min-height:100vh;
-  zoom:1.6;
-}
-
-/* ── 平板專用放大（Safari/iPad 相容） ── */
-@media(min-width:481px) and (max-width:1200px){
-  html{ font-size:180%; }
+  zoom:1.2;
 }
 
 /* ── HEADER ── */
@@ -622,7 +617,7 @@ select option{background:#fff;}
         <input type="number" id="childCount" min="0" value="0" oninput="calcAll()">
       </div>
       <div class="field">
-        <label class="field-label">父母
+        <label class="field-label">父母（人數，最多2人）
           <span class="tip" data-tip="被繼承人父母仍在世者，每人扣除額 138 萬元，最多計 2 人。">ⓘ</span>
         </label>
         <input type="number" id="parentCount" min="0" max="2" value="0" oninput="calcAll()">
@@ -1587,16 +1582,15 @@ calcAll();
   }
 
   function positionTip(e) {
-    const ZOOM = parseFloat(getComputedStyle(document.body).zoom) || 1;
     const GAP = 14;
     const bw = box.offsetWidth  || 240;
     const bh = box.offsetHeight || 80;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    let x = (e.clientX + GAP) / ZOOM;
-    let y = (e.clientY - bh - GAP) / ZOOM;
-    if (x + bw > (vw - 8) / ZOOM) x = (e.clientX - bw - GAP) / ZOOM;
-    if (y < 8) y = (e.clientY + GAP) / ZOOM;
+    let x = e.clientX + GAP;
+    let y = e.clientY - bh - GAP;
+    if (x + bw > vw - 8) x = e.clientX - bw - GAP;
+    if (y < 8) y = e.clientY + GAP;
     box.style.left = x + 'px';
     box.style.top  = y + 'px';
   }
