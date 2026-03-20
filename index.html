@@ -41,7 +41,12 @@ body{
   color:var(--text-primary);
   font-family:'Noto Serif TC',serif;
   min-height:100vh;
-  zoom:1.4;
+  zoom:1.6;
+}
+
+/* ── 平板專用放大（Safari/iPad 相容） ── */
+@media(min-width:481px) and (max-width:1200px){
+  html{ font-size:180%; }
 }
 
 /* ── HEADER ── */
